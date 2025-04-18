@@ -45,11 +45,15 @@ import json
 import time
 
 st.title("XCTrack Geolocation Demo1")
-i = 0
-while True:
-    return_value = st_javascript(
-        "(function(){ return JSON.parse(window.XCTrack.getLocation()); })()", key=f"{i}"
-    )
+return_value = st_javascript("(function(){ return window.XCTrack.getLocation(); })()")
+st.write(return_value)
+
+try:
+    geo = json.loads(return_value)
+    st.write(geo)
+except Exception as e:
+    st.write(f"Error parsing JSON: {e}")
     st.write(return_value)
-    i = i + 1
-    time.sleep(1)
+    geo = {}
+time.sleep(1)
+st.rerun()
