@@ -44,6 +44,9 @@ from streamlit_javascript import st_javascript
 
 st.title("XCTrack Geolocation Demo")
 
+return_value = st_javascript("(function(){ return {'width':window.XCTrack.getLocation()}; })()")
+st.write(f"Width: {return_value}")
+
 js_code = """
 (() => {
     const timestamp = new Date().toLocaleTimeString();
@@ -57,7 +60,7 @@ js_code = """
             response = {"error": String(e), "source": "XCTrack"};
         }
         response["time"] = timestamp;
-        return response;
+        return [1,2 ] //response;
     }
     // Fallback: Try browser geolocation API
     else if (navigator.geolocation) {
