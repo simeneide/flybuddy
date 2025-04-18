@@ -5,59 +5,63 @@ from streamlit_javascript import st_javascript
 st.set_page_config(layout="wide", page_title="XCTrack Live Position")
 st.title("XCTrack Live GPS Map")
 
-coords = st_javascript(
-    """
-    (async function(){
-        // Try XCTrack first
-        if (typeof XCTrack !== "undefined" && typeof XCTrack.getLocation === "function") {
+
+def get_xctrack_or_browser_location_js():
+    # Improved readability, matches your HTML debug logic and string formatting
+    return """
+    (async function() {
+        // Helper for browser time
+        const timestamp = new Date().toLocaleTimeString();
+        // Try XCTrack if present
+        if (typeof XCTrack !== 'undefined' && typeof XCTrack.getLocation === 'function') {
             try {
                 const location = JSON.parse(XCTrack.getLocation());
-                // XCTrack location example structure: { latitude: ..., longitude: ..., accuracy: ... }
                 if (location && typeof location.latitude === 'number' && typeof location.longitude === 'number') {
-                    return [location.latitude, location.longitude, location.accuracy || null, "XCTrack"];
+                    return [location.latitude, location.longitude, location.accuracy || null, "XCTrack", timestamp];
                 }
-            } catch (e) {
-                // Could not parse, fall through to browser API
+                return [null, null, null, "XCTrack returned bad data", timestamp];
+            } catch (error) {
+                return [null, null, null, `XCTrack exception: ${error}`, timestamp];
             }
-        }
-        // Otherwise, fallback to browser geolocation
-        if (navigator.geolocation) {
+        } else if (navigator.geolocation) {
             try {
-                const pos = await new Promise((resolve, reject) => {
+                const pos = await new Promise((resolve) =>
                     navigator.geolocation.getCurrentPosition(
                         p => resolve(p),
-                        err => resolve({coords: {latitude: null, longitude: null, accuracy: null}, error: err.message})
-                    );
-                });
+                        err => resolve({ coords: { latitude: null, longitude: null, accuracy: null }, error: err.message })
+                    )
+                );
                 let lat = pos.coords.latitude;
                 let lon = pos.coords.longitude;
                 let acc = pos.coords.accuracy;
                 if (lat && lon) {
-                    return [lat, lon, acc, "Browser"];
+                    return [lat, lon, acc, "Browser", timestamp];
                 } else {
-                    return [null, null, null, pos.error || "Unknown error"];
+                    return [null, null, null, pos.error || "Unknown error", timestamp];
                 }
-            } catch (e) {
-                return [null, null, null, e.toString()];
+            } catch (error) {
+                return [null, null, null, `Browser geolocation exception: ${error}`, timestamp];
             }
         } else {
-            return [null, null, null, "Geolocation not supported"];
+            return [null, null, null, "Geolocation not supported", timestamp];
         }
     })()
-    """,
-    "Waiting for GPS location...",
+    """
+
+
+# Get coordinates
+coords = st_javascript(
+    get_xctrack_or_browser_location_js(),
 )
 
-st.write("Raw coords:", coords)
-
-if coords is None:
+if coords is None or not isinstance(coords, list) or len(coords) < 5:
     st.info(
         "Waiting for browser/XCTrack GPS location (allow location permissions or enable in XCTrack)."
     )
-elif isinstance(coords, list):
-    lat, lon, acc, src = coords
+else:
+    lat, lon, acc, src, timestamp = coords
     if lat is not None and lon is not None:
-        st.success(f"Got location from {src}: {lat:.6f}, {lon:.6f} (Accuracy: {acc}m)")
+        st.success(f"({timestamp}) Location from {src}: {lat:.6f}, {lon:.6f} (Accuracy: {acc}m)")
         fig = go.Figure(
             go.Scattermapbox(
                 lat=[lat],
@@ -79,6 +83,4 @@ elif isinstance(coords, list):
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.error(f"GPS error: {src}")
-else:
-    st.error("Unexpected error getting GPS coordinates.")
+        st.error(f"({timestamp}) GPS error: {src}")
