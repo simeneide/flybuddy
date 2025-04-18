@@ -16,19 +16,15 @@ try:
     geoloc_str = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
     st.session_state["locdata"] = json.loads(geoloc_str)
 
-    # Adjust the field names if your XCTrack data uses different key names!
-    lat = float(data["latitude"]) if "latitude" in data else None
-    lon = float(data["longitude"]) if "longitude" in data else None
 
-    st.write(f"Current location: {lat}, {lon}")
 except Exception as e:
     st.write(f"Error parsing JSON: {e}")
 
-if lat is not None and lon is not None:
+if st.session_state.get("locdata"):
     fig = go.Figure(
         go.Scattermapbox(
-            lat=[lat],
-            lon=[lon],
+            lat=[st.session_state.get("locdata").get("lat")],
+            lon=[st.session_state.get("locdata").get("lon")],
             mode="markers",
             marker=go.scattermapbox.Marker(size=15, color="red"),
             text=["You are here!"],
