@@ -1,86 +1,93 @@
+"""
+## TEMPLATE APP FROM XCTrack to get location data
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XCTrack.getLocation() Debug</title>
+    <style>
+        body {
+            background-color: white;
+            color: black;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+    <script>
+        function getLocation() {
+            const timestamp = new Date().toLocaleTimeString();
+            if (typeof XCTrack !== 'undefined' && typeof XCTrack.getLocation === 'function') {
+                try {
+                    const location = JSON.parse(XCTrack.getLocation());
+                    document.body.innerHTML = `<pre>Time: ${timestamp}\nXCTrack.getLocation()=\n${JSON.stringify(location, null, 2)}</pre>`;
+                } catch (error) {
+                    document.body.innerHTML = `<pre>Time: ${timestamp}\nError: ${error}</pre>`;
+                }
+            } else {
+                document.body.innerHTML = `<pre>Time: ${timestamp}\nXCTrack.getLocation() is not available!\nDoes it run in XCTrack?\nIs the option "Allow web page to access XCTrack data" enabled?</pre>`;
+            }
+        }
+
+        window.onload = function() {
+            getLocation();
+            setInterval(getLocation, 1000);
+        };
+    </script>
+</head>
+<body>
+</body>
+</html>
+"""
+
 import streamlit as st
-import plotly.graph_objects as go
 from streamlit_javascript import st_javascript
 
-st.set_page_config(layout="wide", page_title="XCTrack Live Position")
-st.title("XCTrack Live GPS Map")
+st.title("XCTrack Geolocation Demo")
 
-
-def get_xctrack_or_browser_location_js():
-    # Improved readability, matches your HTML debug logic and string formatting
-    return """
-    (async function() {
-        // Helper for browser time
-        const timestamp = new Date().toLocaleTimeString();
-        // Try XCTrack if present
-        if (typeof XCTrack !== 'undefined' && typeof XCTrack.getLocation === 'function') {
-            try {
-                const location = JSON.parse(XCTrack.getLocation());
-                if (location && typeof location.latitude === 'number' && typeof location.longitude === 'number') {
-                    return [location.latitude, location.longitude, location.accuracy || null, "XCTrack", timestamp];
-                }
-                return [null, null, null, "XCTrack returned bad data", timestamp];
-            } catch (error) {
-                return [null, null, null, `XCTrack exception: ${error}`, timestamp];
-            }
-        } else if (navigator.geolocation) {
-            try {
-                const pos = await new Promise((resolve) =>
-                    navigator.geolocation.getCurrentPosition(
-                        p => resolve(p),
-                        err => resolve({ coords: { latitude: null, longitude: null, accuracy: null }, error: err.message })
-                    )
-                );
-                let lat = pos.coords.latitude;
-                let lon = pos.coords.longitude;
-                let acc = pos.coords.accuracy;
-                if (lat && lon) {
-                    return [lat, lon, acc, "Browser", timestamp];
-                } else {
-                    return [null, null, null, pos.error || "Unknown error", timestamp];
-                }
-            } catch (error) {
-                return [null, null, null, `Browser geolocation exception: ${error}`, timestamp];
-            }
-        } else {
-            return [null, null, null, "Geolocation not supported", timestamp];
+js_code = """
+(() => {
+    const timestamp = new Date().toLocaleTimeString();
+    let response = {};
+    // Try XCTrack first
+    if (typeof window.XCTrack !== "undefined" && typeof window.XCTrack.getLocation === "function") {
+        try {
+            response = JSON.parse(window.XCTrack.getLocation());
+            response["source"] = "XCTrack";
+        } catch(e) {
+            response = {"error": String(e), "source": "XCTrack"};
         }
-    })()
-    """
+        response["time"] = timestamp;
+        return response;
+    }
+    // Fallback: Try browser geolocation API
+    else if (navigator.geolocation) {
+        return new Promise(resolve => {
+            navigator.geolocation.getCurrentPosition(
+                pos => resolve({
+                    "latitude": pos.coords.latitude,
+                    "longitude": pos.coords.longitude,
+                    "accuracy": pos.coords.accuracy,
+                    "source": "Browser",
+                    "time": timestamp
+                }),
+                err => resolve({"error": err.message, "source": "Browser", "time": timestamp})
+            );
+        });
+    }
+    // No geolocation available
+    else {
+        return {"error": "No geolocation API available", "time": timestamp};
+    }
+})()
+"""
 
-
-# Get coordinates
-coords = st_javascript(
-    get_xctrack_or_browser_location_js(),
-)
-
-if coords is None or not isinstance(coords, list) or len(coords) < 5:
-    st.info(
-        "Waiting for browser/XCTrack GPS location (allow location permissions or enable in XCTrack)."
-    )
-else:
-    lat, lon, acc, src, timestamp = coords
-    if lat is not None and lon is not None:
-        st.success(f"({timestamp}) Location from {src}: {lat:.6f}, {lon:.6f} (Accuracy: {acc}m)")
-        fig = go.Figure(
-            go.Scattermapbox(
-                lat=[lat],
-                lon=[lon],
-                mode="markers+text",
-                marker=dict(size=14, color="red"),
-                text=["You"],
-                textposition="top center",
-            )
-        )
-        fig.update_layout(
-            mapbox_style="open-street-map",
-            mapbox_center_lat=lat,
-            mapbox_center_lon=lon,
-            mapbox_zoom=13,
-            margin=dict(l=0, r=0, t=0, b=0),
-            width=800,
-            height=600,
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.error(f"({timestamp}) GPS error: {src}")
+# Button for manual refresh
+loc = st_javascript(js_code)
+st.write(loc)
+# if loc is None:
+#     st.info("Click 'Get Location' to fetch location data...")
+# elif "error" in loc:
+#     st.error(f"Error: {loc['error']} (source: {loc.get('source', '?')})")
+# else:
+#     st.write(f"Location data (source: {loc.get('source', '?')}) at {loc.get('time', '?')}:")
+#     st.json(loc)
