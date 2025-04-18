@@ -2,6 +2,19 @@ import streamlit as st
 import plotly.graph_objects as go
 from streamlit_javascript import st_javascript
 
+st.title("st-geolocation")
+from streamlit_geolocation import st_geolocation
+
+st.title("XCTrack Live GPS Map")
+
+location = st_geolocation(key="geoloc1")
+
+if location and location.get("latitude") and location.get("longitude"):
+    st.success(f"Got location: {location['latitude']:.6f}, {location['longitude']:.6f}")
+    st.write(location)
+else:
+    st.info("Waiting for browser GPS location (allow location permissions).")
+
 st.set_page_config(layout="wide", page_title="XCTrack Live Position")
 st.title("XCTrack Live GPS Map")
 
