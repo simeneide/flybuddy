@@ -44,12 +44,12 @@ from streamlit_javascript import st_javascript
 import json
 import time
 
-st.title("XCTrack Geolocation Demo")
+st.title("XCTrack Geolocation Demo1")
 i = 0
 while True:
     return_value = st_javascript(
-        "(function(){ return window.XCTrack.getLocation(); })()", key=f"{i}"
+        "(function(){ return JSON.parse(window.XCTrack.getLocation()); })()", key=f"{i}"
     )
-    st.write(json.loads(return_value))
+    st.write(return_value)
     i = i + 1
     time.sleep(1)
