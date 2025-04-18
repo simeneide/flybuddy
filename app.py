@@ -50,6 +50,6 @@ while True:
     return_value = st_javascript(
         "(function(){ return window.XCTrack.getLocation(); })()", key=f"{i}"
     )
-    st.write(return_value)
+    st.write(json.loads(return_value))
     i = i + 1
     time.sleep(1)
