@@ -45,16 +45,16 @@ import json
 import time
 import datetime
 
+st.session_state["locdata"] = {}
 st.title("XCTrack Geolocation Demo1")
-key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-return_value = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
+
 
 try:
-    geo = json.loads(return_value)
-    st.write(geo)
+    key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return_value = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
+    st.session_state["locdata"] = json.loads(return_value)
+    st.write(st.session_state["locdata"])
 except Exception as e:
     st.write(f"Error parsing JSON: {e}")
-    st.write(return_value)
-    geo = {}
-time.sleep(3)
+time.sleep(5)
 st.rerun()
