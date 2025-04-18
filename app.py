@@ -33,12 +33,13 @@ if st.session_state.get("locdata"):
 else:
     st.info("Waiting for GPS location from XCTrack...")
 st.write(st.session_state.get("locdata", "no location data found"))
-time.sleep(5)
+
 try:
     key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     geoloc_str = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
     st.session_state["locdata"] = json.loads(geoloc_str)
 except Exception as e:
+    st.write(geoloc_str)
     st.write(f"Error parsing JSON: {e}")
-
+time.sleep(5)
 st.rerun()
