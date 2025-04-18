@@ -53,8 +53,10 @@ try:
     key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return_value = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
     st.session_state["locdata"] = json.loads(return_value)
-    st.write(st.session_state["locdata"])
 except Exception as e:
     st.write(f"Error parsing JSON: {e}")
+
+
+st.write(st.session_state["locdata"])
 time.sleep(5)
 st.rerun()
