@@ -5,17 +5,6 @@ import time
 import datetime
 import plotly.graph_objects as go
 
-st.title("XCTrack Geolocation Demo1")
-
-try:
-    key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    geoloc_str = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
-    st.session_state["locdata"] = json.loads(geoloc_str)
-
-
-except Exception as e:
-    st.write(f"Error parsing JSON: {e}")
-
 if st.session_state.get("locdata"):
     fig = go.Figure(
         go.Scattermapbox(
@@ -45,4 +34,13 @@ else:
     st.info("Waiting for GPS location from XCTrack...")
 st.write(st.session_state.get("locdata", "no location data found"))
 time.sleep(5)
+try:
+    key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    geoloc_str = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
+    st.session_state["locdata"] = json.loads(geoloc_str)
+
+
+except Exception as e:
+    pass  # st.write(f"Error parsing JSON: {e}")
+
 st.rerun()
