@@ -43,9 +43,11 @@ import streamlit as st
 from streamlit_javascript import st_javascript
 import json
 import time
+import datetime
 
 st.title("XCTrack Geolocation Demo1")
-return_value = st_javascript("(function(){ return window.XCTrack.getLocation(); })()")
+key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+return_value = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
 st.write(return_value)
 
 try:
