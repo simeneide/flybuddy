@@ -7,10 +7,6 @@ import plotly.graph_objects as go
 
 st.title("XCTrack Geolocation Demo1")
 
-st.write(st.session_state.get("locdata", {}))
-lat = None
-lon = None
-
 try:
     key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     geoloc_str = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
@@ -34,7 +30,10 @@ if st.session_state.get("locdata"):
     fig.update_layout(
         mapbox=dict(
             style="open-street-map",
-            center=dict(lat=lat, lon=lon),
+            center=dict(
+                lat=st.session_state.get("locdata").get("lat"),
+                lon=st.session_state.get("locdata").get("lon"),
+            ),
             zoom=14,
         ),
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
