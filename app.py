@@ -1,60 +1,53 @@
-"""
-## TEMPLATE APP FROM XCTrack to get location data
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XCTrack.getLocation() Debug</title>
-    <style>
-        body {
-            background-color: white;
-            color: black;
-            font-family: Arial, sans-serif;
-        }
-    </style>
-    <script>
-        function getLocation() {
-            const timestamp = new Date().toLocaleTimeString();
-            if (typeof XCTrack !== 'undefined' && typeof XCTrack.getLocation === 'function') {
-                try {
-                    const location = JSON.parse(XCTrack.getLocation());
-                    document.body.innerHTML = `<pre>Time: ${timestamp}\nXCTrack.getLocation()=\n${JSON.stringify(location, null, 2)}</pre>`;
-                } catch (error) {
-                    document.body.innerHTML = `<pre>Time: ${timestamp}\nError: ${error}</pre>`;
-                }
-            } else {
-                document.body.innerHTML = `<pre>Time: ${timestamp}\nXCTrack.getLocation() is not available!\nDoes it run in XCTrack?\nIs the option "Allow web page to access XCTrack data" enabled?</pre>`;
-            }
-        }
-
-        window.onload = function() {
-            getLocation();
-            setInterval(getLocation, 1000);
-        };
-    </script>
-</head>
-<body>
-</body>
-</html>
-"""
-
 import streamlit as st
 from streamlit_javascript import st_javascript
 import json
 import time
 import datetime
-
+import plotly.graph_objects as go
 
 st.title("XCTrack Geolocation Demo1")
 
 st.write(st.session_state.get("locdata", {}))
+lat = None
+lon = None
+
 try:
     key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    return_value = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
-    st.session_state["locdata"] = json.loads(return_value)
+    geoloc_str = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
+    st.session_state["locdata"] = json.loads(geoloc_str)
+
+    # Adjust the field names if your XCTrack data uses different key names!
+    lat = float(data["latitude"]) if "latitude" in data else None
+    lon = float(data["longitude"]) if "longitude" in data else None
+
+    st.write(f"Current location: {lat}, {lon}")
 except Exception as e:
     st.write(f"Error parsing JSON: {e}")
 
+if lat is not None and lon is not None:
+    fig = go.Figure(
+        go.Scattermapbox(
+            lat=[lat],
+            lon=[lon],
+            mode="markers",
+            marker=go.scattermapbox.Marker(size=15, color="red"),
+            text=["You are here!"],
+        )
+    )
+
+    fig.update_layout(
+        mapbox=dict(
+            style="open-street-map",
+            center=dict(lat=lat, lon=lon),
+            zoom=14,
+        ),
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+else:
+    st.info("Waiting for GPS location from XCTrack...")
+st.write(st.session_state.get("locdata", "no location data found"))
 time.sleep(5)
 st.rerun()
