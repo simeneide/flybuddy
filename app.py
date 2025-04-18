@@ -41,11 +41,15 @@
 
 import streamlit as st
 from streamlit_javascript import st_javascript
+import json
 
 st.title("XCTrack Geolocation Demo")
 
 return_value = st_javascript("(function(){ return {'width':window.XCTrack.getLocation()}; })()")
 st.write(f"Width: {return_value}")
+
+
+st.write(json.loads(return_value))
 
 js_code = """
 (() => {
