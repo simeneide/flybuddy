@@ -48,7 +48,7 @@ st.title("XCTrack Geolocation Demo")
 i = 0
 while True:
     return_value = st_javascript(
-        "(function(){ return {'width':window.XCTrack.getLocation()}; })()", key=f"{i}"
+        "(function(){ return window.XCTrack.getLocation(); })()", key=f"{i}"
     )
     st.write(return_value)
     i = i + 1
