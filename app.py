@@ -23,6 +23,7 @@ coords = st_javascript(
     """,
     "Waiting for browser GPS location...",
 )
+print(coords)
 st.write(st_javascript("1+1"))
 
 if coords and isinstance(coords, list) and coords[0] is not None and coords[1] is not None:
