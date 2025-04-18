@@ -2,47 +2,62 @@ import streamlit as st
 import plotly.graph_objects as go
 from streamlit_javascript import st_javascript
 
-st.title("st-geolocation")
-from streamlit_geolocation import st_geolocation
-
-st.title("XCTrack Live GPS Map")
-
-location = st_geolocation(key="geoloc1")
-
-if location and location.get("latitude") and location.get("longitude"):
-    st.success(f"Got location: {location['latitude']:.6f}, {location['longitude']:.6f}")
-    st.write(location)
-else:
-    st.info("Waiting for browser GPS location (allow location permissions).")
-
 st.set_page_config(layout="wide", page_title="XCTrack Live Position")
 st.title("XCTrack Live GPS Map")
 
 coords = st_javascript(
     """
     (async function(){
+        // Try XCTrack first
+        if (typeof XCTrack !== "undefined" && typeof XCTrack.getLocation === "function") {
+            try {
+                const location = JSON.parse(XCTrack.getLocation());
+                // XCTrack location example structure: { latitude: ..., longitude: ..., accuracy: ... }
+                if (location && typeof location.latitude === 'number' && typeof location.longitude === 'number') {
+                    return [location.latitude, location.longitude, location.accuracy || null, "XCTrack"];
+                }
+            } catch (e) {
+                // Could not parse, fall through to browser API
+            }
+        }
+        // Otherwise, fallback to browser geolocation
         if (navigator.geolocation) {
-            return await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(
-                    pos => resolve([pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy]),
-                    err => resolve([null, null, err.message])
-                );
-            });
+            try {
+                const pos = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(
+                        p => resolve(p),
+                        err => resolve({coords: {latitude: null, longitude: null, accuracy: null}, error: err.message})
+                    );
+                });
+                let lat = pos.coords.latitude;
+                let lon = pos.coords.longitude;
+                let acc = pos.coords.accuracy;
+                if (lat && lon) {
+                    return [lat, lon, acc, "Browser"];
+                } else {
+                    return [null, null, null, pos.error || "Unknown error"];
+                }
+            } catch (e) {
+                return [null, null, null, e.toString()];
+            }
         } else {
-            return [null, null, "Geolocation not supported"];
+            return [null, null, null, "Geolocation not supported"];
         }
     })()
     """,
-    "Waiting for browser GPS location...",
+    "Waiting for GPS location...",
 )
+
 st.write("Raw coords:", coords)
 
 if coords is None:
-    st.info("Waiting for browser GPS location (allow location permissions, and reload if needed).")
+    st.info(
+        "Waiting for browser/XCTrack GPS location (allow location permissions or enable in XCTrack)."
+    )
 elif isinstance(coords, list):
-    lat, lon, acc = coords
+    lat, lon, acc, src = coords
     if lat is not None and lon is not None:
-        st.success(f"Got location: {lat:.6f}, {lon:.6f} (Accuracy: {acc}m)")
+        st.success(f"Got location from {src}: {lat:.6f}, {lon:.6f} (Accuracy: {acc}m)")
         fig = go.Figure(
             go.Scattermapbox(
                 lat=[lat],
@@ -64,6 +79,6 @@ elif isinstance(coords, list):
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.error(f"GPS error: {acc}")
+        st.error(f"GPS error: {src}")
 else:
     st.error("Unexpected error getting GPS coordinates.")
