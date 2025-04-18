@@ -45,10 +45,10 @@ import json
 import time
 import datetime
 
-st.session_state["locdata"] = {}
+
 st.title("XCTrack Geolocation Demo1")
 
-st.write(st.session_state["locdata"])
+st.write(st.session_state.get("locdata", {}))
 try:
     key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return_value = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
