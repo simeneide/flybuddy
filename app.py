@@ -48,7 +48,7 @@ import datetime
 st.session_state["locdata"] = {}
 st.title("XCTrack Geolocation Demo1")
 
-
+st.write(st.session_state["locdata"])
 try:
     key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return_value = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
@@ -56,7 +56,5 @@ try:
 except Exception as e:
     st.write(f"Error parsing JSON: {e}")
 
-
-st.write(st.session_state["locdata"])
 time.sleep(5)
 st.rerun()
