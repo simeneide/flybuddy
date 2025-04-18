@@ -38,9 +38,7 @@ try:
     key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     geoloc_str = st_javascript("(function(){ return window.XCTrack.getLocation(); })()", key=key)
     st.session_state["locdata"] = json.loads(geoloc_str)
-
-
 except Exception as e:
-    pass  # st.write(f"Error parsing JSON: {e}")
+    st.write(f"Error parsing JSON: {e}")
 
 st.rerun()
