@@ -16,7 +16,9 @@ hide_streamlit_style = """
                 /* Optionally, hide the footer */
                 .streamlit-footer {display: none;}
                 /* Hide your specific div class, replace class name with the one you identified */
-                .st-emotion-cache-uf99v8 {display: none;}
+                [class^="st-emotion-cache-12"] {
+                     padding: 0rem 0rem 0rem;
+                }
             </style>
             """
 
