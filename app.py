@@ -146,24 +146,80 @@ def get_window_size():
     return size
 
 
-print(st.session_state.get("locdata"))
+def circle_coords(lat, lon, radius_km, num_points=90):
+    import numpy as np
+
+    R = 6371  # Earth radius in km
+    angles = np.linspace(0, 2 * np.pi, num_points)
+    lat_rad, lon_rad = np.radians(lat), np.radians(lon)
+    d = radius_km / R
+
+    lats = np.arcsin(np.sin(lat_rad) * np.cos(d) + np.cos(lat_rad) * np.sin(d) * np.cos(angles))
+    lons = lon_rad + np.arctan2(
+        np.sin(angles) * np.sin(d) * np.cos(lat_rad), np.cos(d) - np.sin(lat_rad) * np.sin(lats)
+    )
+    return np.degrees(lats), np.degrees(lons)
+
 
 if (st.session_state.get("locdata") is not None) & (
     st.session_state.get("window_size") is not None
 ):
-    fig = go.Figure(
+    radii_km = [1, 2, 5, 10, 20]  # You can tune this based on zoom
+    map_layers = []
+    loc = st.session_state["locdata"]
+    lat_center = loc["lat"]
+    lon_center = loc["lon"]
+    # Draw filled circles for each radius
+    for radius_km in radii_km:
+        lats, lons = circle_coords(lat_center, lon_center, radius_km)
+        map_layers.append(
+            go.Scattermap(
+                lat=lats,
+                lon=lons,
+                mode="lines",
+                line=dict(width=2, color="rgba(0,100,255,0.5)"),
+                hoverinfo="skip",
+                showlegend=False,
+                name=f"{radius_km}km radius",
+            )
+        )
+        # Draw a text box saying the radius at the top of the circle
+        map_layers.append(
+            go.Scattermap(
+                lat=[lats[0]],
+                lon=[lons[0]],
+                mode="markers",
+                marker=go.scattermap.Marker(size=30, color="white", opacity=0.3),
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
+        map_layers.append(
+            go.Scattermap(
+                lat=[lats[0]],
+                lon=[lons[0]],
+                mode="text",
+                text=[f"{radius_km}km"],
+                # textposition="top center",
+                showlegend=False,
+                textfont=dict(color="red", size=10),
+            )
+        )
+    map_layers.append(
         go.Scattermap(
             lat=[st.session_state.get("locdata").get("lat")],
             lon=[st.session_state.get("locdata").get("lon")],
             mode="markers",
             marker=go.Marker(size=15, color="red"),
             text=["You are here!"],
+            showlegend=False,
         )
     )
+    fig = go.Figure(map_layers)
 
     fig.update_layout(
         map=dict(
-            style="open-street-map",
+            style="satellite",  # "outdoors",  # "open-street-map",
             center=dict(
                 lat=st.session_state.get("locdata").get("lat"),
                 lon=st.session_state.get("locdata").get("lon"),
@@ -174,8 +230,9 @@ if (st.session_state.get("locdata") is not None) & (
         height=st.session_state["window_size"]["height"],
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
     )
+    fig.update_layout(autosize=True)
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=False)
 
 update_session_state()
 DEBUG = True
