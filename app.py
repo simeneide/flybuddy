@@ -21,6 +21,7 @@ hide_streamlit_style = """
             """
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+# st.markdown("<style>iframe{display: none}</style>", unsafe_allow_html=True)
 
 
 class LocationData(BaseModel):
@@ -81,6 +82,26 @@ def get_best_location():
 
 
 def update_session_state():
+    # Get window size
+    reload = False
+    window_width, window_height = get_window_size()
+    # check if session state is different from the current window size
+    if st.session_state.get("window_size") is None:
+        st.session_state["window_size"] = {
+            "width": window_width,
+            "height": window_height,
+        }
+        reload = True
+    elif (
+        st.session_state["window_size"]["width"] != window_width
+        or st.session_state["window_size"]["height"] != window_height
+    ):
+        st.session_state["window_size"] = {
+            "width": window_width,
+            "height": window_height,
+        }
+        reload = True
+
     # Check if the session state already has locdata
     if "locdata" not in st.session_state:
         st.session_state["locdata"] = None
@@ -90,9 +111,19 @@ def update_session_state():
 
     # Update session state with the new location data
     if isinstance(location, LocationData):
-        st.session_state["locdata"] = location.model_dump()
-    else:
-        st.session_state["locdata"] = {"error": location.get("error")}
+        location_dict = location.model_dump()
+        # Check if location data has changed significantly
+        if (
+            st.session_state["locdata"] is None
+            or abs(st.session_state["locdata"]["lat"] - location_dict["lat"]) > 0.0001
+            or abs(st.session_state["locdata"]["lon"] - location_dict["lon"]) > 0.0001
+        ):
+            st.session_state["locdata"] = location_dict
+            reload = True
+
+    if reload:
+        # Reload the page if window size changed
+        st.rerun()
 
 
 def get_window_size():
@@ -113,20 +144,7 @@ def get_window_size():
     return size
 
 
-# st.write(get_window_size())
-
-window_width, window_height = get_window_size()
-st.session_state["window_size"] = {
-    "width": window_width,
-    "height": window_height,
-}
-DEBUG = False
-update_session_state()
-if DEBUG:
-    st.write("Debug mode is ON")
-    st.write("Session state:")
-    st.write(st.session_state)
-
+print(st.session_state.get("locdata"))
 
 if (st.session_state.get("locdata") is not None) & (
     st.session_state.get("window_size") is not None
@@ -156,3 +174,11 @@ if (st.session_state.get("locdata") is not None) & (
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+update_session_state()
+DEBUG = True
+
+if DEBUG:
+    st.write("Debug mode is ON")
+    st.write("Session state:")
+    st.write(st.session_state)
