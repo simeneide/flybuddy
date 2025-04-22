@@ -85,7 +85,7 @@ def update_session_state():
 def get_window_size():
     # Use JS to get window size via streamlit_js_eval and cache it in session_state
     size = streamlit_js_eval.streamlit_js_eval(
-        js_expressions="[window.innerWidth, window.innerHeight]",
+        js_expressions="[window.innerWidth, window.parent.innerHeight]",
         key="get_win_size",
         want_response=True,
     )
