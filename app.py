@@ -9,6 +9,19 @@ import streamlit_js_eval
 from pydantic import BaseModel
 from typing import Optional
 
+hide_streamlit_style = """
+            <style>
+                /* Hide the Streamlit header and menu */
+                header {visibility: hidden;}
+                /* Optionally, hide the footer */
+                .streamlit-footer {display: none;}
+                /* Hide your specific div class, replace class name with the one you identified */
+                .st-emotion-cache-uf99v8 {display: none;}
+            </style>
+            """
+
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 
 class LocationData(BaseModel):
     timestamp: int
@@ -115,7 +128,9 @@ if DEBUG:
     st.write(st.session_state)
 
 
-if st.session_state.get("locdata"):
+if (st.session_state.get("locdata") is not None) & (
+    st.session_state.get("window_size") is not None
+):
     fig = go.Figure(
         go.Scattermap(
             lat=[st.session_state.get("locdata").get("lat")],
