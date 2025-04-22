@@ -100,8 +100,13 @@ def get_window_size():
     return size
 
 
-st.write(get_window_size())
+# st.write(get_window_size())
 
+window_width, window_height = get_window_size()
+st.session_state["window_size"] = {
+    "width": window_width,
+    "height": window_height,
+}
 DEBUG = False
 update_session_state()
 if DEBUG:
@@ -130,6 +135,8 @@ if st.session_state.get("locdata"):
             ),
             zoom=14,
         ),
+        width=st.session_state["window_size"]["width"],
+        height=st.session_state["window_size"]["height"],
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
     )
 
