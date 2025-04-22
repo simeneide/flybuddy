@@ -92,17 +92,17 @@ if DEBUG:
 
 if st.session_state.get("locdata"):
     fig = go.Figure(
-        go.Scattermapbox(
+        go.Scattermap(
             lat=[st.session_state.get("locdata").get("lat")],
             lon=[st.session_state.get("locdata").get("lon")],
             mode="markers",
-            marker=go.scattermapbox.Marker(size=15, color="red"),
+            marker=go.Marker(size=15, color="red"),
             text=["You are here!"],
         )
     )
 
     fig.update_layout(
-        mapbox=dict(
+        map=dict(
             style="open-street-map",
             center=dict(
                 lat=st.session_state.get("locdata").get("lat"),
