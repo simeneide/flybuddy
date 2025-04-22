@@ -82,7 +82,7 @@ def update_session_state():
         st.session_state["locdata"] = {"error": location.get("error")}
 
 
-DEBUG = True
+DEBUG = False
 update_session_state()
 if DEBUG:
     st.write("Debug mode is ON")
@@ -90,30 +90,27 @@ if DEBUG:
     st.write(st.session_state)
 
 
-# if st.session_state.get("locdata"):
-#     fig = go.Figure(
-#         go.Scattermapbox(
-#             lat=[st.session_state.get("locdata").get("lat")],
-#             lon=[st.session_state.get("locdata").get("lon")],
-#             mode="markers",
-#             marker=go.scattermapbox.Marker(size=15, color="red"),
-#             text=["You are here!"],
-#         )
-#     )
+if st.session_state.get("locdata"):
+    fig = go.Figure(
+        go.Scattermapbox(
+            lat=[st.session_state.get("locdata").get("lat")],
+            lon=[st.session_state.get("locdata").get("lon")],
+            mode="markers",
+            marker=go.scattermapbox.Marker(size=15, color="red"),
+            text=["You are here!"],
+        )
+    )
 
-#     fig.update_layout(
-#         mapbox=dict(
-#             style="open-street-map",
-#             center=dict(
-#                 lat=st.session_state.get("locdata").get("lat"),
-#                 lon=st.session_state.get("locdata").get("lon"),
-#             ),
-#             zoom=14,
-#         ),
-#         margin={"r": 0, "t": 0, "l": 0, "b": 0},
-#     )
+    fig.update_layout(
+        mapbox=dict(
+            style="open-street-map",
+            center=dict(
+                lat=st.session_state.get("locdata").get("lat"),
+                lon=st.session_state.get("locdata").get("lon"),
+            ),
+            zoom=14,
+        ),
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+    )
 
-#     st.plotly_chart(fig, use_container_width=True)
-
-# else:
-#     st.info("Waiting for GPS location from XCTrack...")
+    st.plotly_chart(fig, use_container_width=True)
