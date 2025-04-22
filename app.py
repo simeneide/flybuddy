@@ -7,13 +7,17 @@ import streamlit_js_eval
 
 
 from pydantic import BaseModel
+from typing import Optional
 
 
 class LocationData(BaseModel):
+    timestamp: int
     lat: float
     lon: float
     source: str
-    timestamp: int
+    altitude: float
+    isValid: bool = False
+    speed: Optional[float] = None
 
 
 def get_best_location():
@@ -27,22 +31,35 @@ def get_best_location():
             # If it's a string, try to parse it as JSON
             # if isinstance(xctrack_data_raw, str):
             xctrack_data = json.loads(xctrack_data_raw)
-
-            # else:
-            #     xctrack_data = xctrack_data_raw
-            xctrack_data["source"] = "xctrack"
-            return xctrack_data
+            location = LocationData(
+                lat=xctrack_data.get("lat"),
+                lon=xctrack_data.get("lon"),
+                source="xctrack",
+                timestamp=int(time.time()),
+                altitude=xctrack_data.get("altGps"),
+                isValid=xctrack_data.get("isValid"),
+                speed=xctrack_data.get("speedComputed"),
+            )
+            return location
     except Exception as e:
         print(f"Error getting XCTrack location: {e}")
         pass  # failed, will try geolocation next
 
     try:
-        geoloc_data = streamlit_js_eval.get_geolocation()
-        if geoloc_data.get("coords"):
-            loc = geoloc_data.get("coords")
-            loc["source"] = "geolocation"
-            loc["timestamp"] = geoloc_data.get("timestamp")
-        return loc
+        geoloc = streamlit_js_eval.get_geolocation()
+        if geoloc.get("coords"):
+            loc = geoloc.get("coords")
+            location = LocationData(
+                lat=geoloc["coords"].get("latitude"),
+                lon=geoloc["coords"].get("longitude"),
+                source="geolocation",
+                timestamp=geoloc.get("timestamp"),
+                altitude=geoloc["coords"].get("altitude"),
+                speed=geoloc["coords"].get("speed"),
+                isValid=geoloc["coords"].get("accuracy") < 200,  # Assuming accuracy < 200m is valid
+            )
+
+            return location
     except Exception as e:
         print(f"Error getting geolocation: {e}")
         pass
@@ -50,8 +67,27 @@ def get_best_location():
     return {"error": "Both XCTrack and geolocation failed"}
 
 
-st.write("location:")
-st.write(get_best_location())
+def update_session_state():
+    # Check if the session state already has locdata
+    if "locdata" not in st.session_state:
+        st.session_state["locdata"] = None
+
+    # Get the best location
+    location = get_best_location()
+
+    # Update session state with the new location data
+    if isinstance(location, LocationData):
+        st.session_state["locdata"] = location.dict()
+    else:
+        st.session_state["locdata"] = {"error": location.get("error")}
+
+
+DEBUG = True
+update_session_state()
+if DEBUG:
+    st.write("Debug mode is ON")
+    st.write("Session state:")
+    st.write(st.session_state)
 
 
 # if st.session_state.get("locdata"):
