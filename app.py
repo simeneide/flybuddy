@@ -77,10 +77,30 @@ def update_session_state():
 
     # Update session state with the new location data
     if isinstance(location, LocationData):
-        st.session_state["locdata"] = location.dict()
+        st.session_state["locdata"] = location.model_dump()
     else:
         st.session_state["locdata"] = {"error": location.get("error")}
 
+
+def get_window_size():
+    # Use JS to get window size via streamlit_js_eval and cache it in session_state
+    size = streamlit_js_eval.streamlit_js_eval(
+        js_expressions="[window.innerWidth, window.innerHeight]",
+        key="get_win_size",
+        want_response=True,
+    )
+    if isinstance(size, str):
+        # Sometimes result may be serialized as string
+        try:
+            size = json.loads(size)
+        except Exception:
+            size = [800, 600]  # Default value
+    if not isinstance(size, list) or len(size) != 2:
+        size = [800, 600]  # Fallback
+    return size
+
+
+st.write(get_window_size())
 
 DEBUG = False
 update_session_state()
