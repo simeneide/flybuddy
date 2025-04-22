@@ -6,23 +6,32 @@ import plotly.graph_objects as go
 import streamlit_js_eval
 
 
+from pydantic import BaseModel
+
+
+class LocationData(BaseModel):
+    lat: float
+    lon: float
+    source: str
+    timestamp: int
+
+
 def get_best_location():
     # Try XCTrack first
     try:
         xctrack_data_raw = streamlit_js_eval.streamlit_js_eval(
             js_expressions="window.XCTrack && window.XCTrack.getLocation ? window.XCTrack.getLocation() : null",
-            # key=key + "xctrack",
         )
-        st.write(xctrack_data_raw)
+        # Returns a dict with lat, lon, time, altGps, isValid, stdBaroAlt ++
         if xctrack_data_raw:
             # If it's a string, try to parse it as JSON
-            if isinstance(xctrack_data_raw, str):
-                xctrack_data = json.loads(xctrack_data_raw)
-            else:
-                xctrack_data = xctrack_data_raw
-            if isinstance(xctrack_data, dict) and "lat" in xctrack_data and "lon" in xctrack_data:
-                xctrack_data["source"] = "xctrack"
-                return xctrack_data
+            # if isinstance(xctrack_data_raw, str):
+            xctrack_data = json.loads(xctrack_data_raw)
+
+            # else:
+            #     xctrack_data = xctrack_data_raw
+            xctrack_data["source"] = "xctrack"
+            return xctrack_data
     except Exception as e:
         print(f"Error getting XCTrack location: {e}")
         pass  # failed, will try geolocation next
