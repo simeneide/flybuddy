@@ -8,7 +8,6 @@ import streamlit_js_eval
 
 def get_best_location():
     # Try XCTrack first
-    key = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")
     try:
         xctrack_data_raw = streamlit_js_eval.streamlit_js_eval(
             js_expressions="window.XCTrack && window.XCTrack.getLocation ? window.XCTrack.getLocation() : null",
@@ -30,7 +29,6 @@ def get_best_location():
 
     try:
         geoloc_data = streamlit_js_eval.get_geolocation()
-
         if geoloc_data.get("coords"):
             loc = geoloc_data.get("coords")
             loc["source"] = "geolocation"
